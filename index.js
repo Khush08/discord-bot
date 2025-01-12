@@ -20,13 +20,14 @@ async function checkAPI() {
         if (channel) {
             for(let item in newData){
                 const message = `**${newData[item].title}**\n${newData[item].summary}\n${newData[item].url}`;
-                console.log(message);
                 channel.send(message);
             }
         }
 
     } catch (error) {
         console.error('Error fetching API data:', error);
+    } finally {
+        client.destroy();
     }
 }
 
