@@ -6,7 +6,6 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // Bot token and other config
 const BOT_TOKEN = process.env.BOT_TOKEN; 
-let previousData = null;
 
 // Monitor API and check for changes
 async function checkAPI() {
@@ -16,20 +15,16 @@ async function checkAPI() {
           });
         const newData = response.data;
 
-        // Compare with previous data
-        if (JSON.stringify(newData) !== JSON.stringify(previousData)) {
-            previousData = newData;
-
-            // Send message to a specific channel
-            const channel = client.channels.cache.get(process.env.CHANNEL_ID); // Replace with your channel ID
-            if (channel) {
-                for(let item in newData){
-                    const message = `**${newData[item].title}**\n${newData[item].summary}\n${newData[item].url}`;
-                    console.log(message);
-                    channel.send(message);
-                }
+        // Send message to a specific channel
+        const channel = client.channels.cache.get(process.env.CHANNEL_ID); // Replace with your channel ID
+        if (channel) {
+            for(let item in newData){
+                const message = `**${newData[item].title}**\n${newData[item].summary}\n${newData[item].url}`;
+                console.log(message);
+                channel.send(message);
             }
         }
+
     } catch (error) {
         console.error('Error fetching API data:', error);
     }
