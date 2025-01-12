@@ -24,7 +24,8 @@ async function checkAPI() {
             const channel = client.channels.cache.get(process.env.CHANNEL_ID); // Replace with your channel ID
             if (channel) {
                 for(let item in newData){
-                    channel.send(`**${newData[item].title}**\n${newData[item].summary}\n${newData[item].url}`);
+                    const message = `**${newData[item].title}**\n${newData[item].summary}\n${newData[item].url}`;
+                    channel.send(message);
                 }
             }
         }
