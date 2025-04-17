@@ -19,6 +19,27 @@ const log = (message) => {
     console.log(logMessage);
 };
 
+const isTimeBound = (str) => {
+    // Extract date and time
+    const dateTimeRegex = /(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2}:\d{2})/;
+    const match = str.match(dateTimeRegex);
+    if (!match) {
+        return null;
+    }
+    const dateStr = match[1]; // DD-MM-YYYY format
+    const timeStr = match[2]; // HH:mm:SS format
+    // Parse the date and time from the string
+    const [day, month, year] = dateStr.split('-').map(Number);
+    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    // Create Date object for the extracted time
+    const extractedTimestamp = new Date(year, month - 1, day, hours, minutes, seconds).getTime();
+    // Get current timestamp
+    const currentTimestamp = Date.now();
+    // Calculate time difference in hours (30 hours = 30 * 60 * 60 * 1000 milliseconds)
+    const diff = Math.abs(extractedTimestamp - currentTimestamp);
+    return diff < 200 * 60 * 1000;
+};
+
 // Main function to monitor BSE announcements
 const monitorBSEAnnouncements = async () => {
     let browser;
@@ -69,9 +90,14 @@ const monitorBSEAnnouncements = async () => {
                 )
                 .filter((table) => {
                     const mainRow = table.getElementsByTagName('tr')[0];
+                    const timeRow = table.getElementsByTagName('tr')[2];
                     const headline = mainRow.getElementsByTagName('td')[0].innerText;
                     const type = mainRow.getElementsByTagName('td')[1].innerText;
+                    const time = timeRow.getElementsByTagName('td')[0].innerText;
 
+                    if (time && time.startsWith('Exchange Received Time') && !isTimeBound(time)) {
+                        return false;
+                    }
                     if (type === 'Company Update') {
                         return headline.includes('Award_of_Order_Receipt_of_Order');
                     }
