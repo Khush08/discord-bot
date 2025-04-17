@@ -9,7 +9,6 @@ const config = {
         headless: 'new', // Use 'new' headless mode for better performance
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
-    timeLimit: 30 * 60 * 1000,
 };
 
 // Setup logging
@@ -60,12 +59,13 @@ const monitorBSEAnnouncements = async () => {
 
         // Extract announcements data
         const newAnnouncements = await page.evaluate(() => {
+            const timeLimit = 30 * 60 * 1000;
             const isTimeBound = (str) => {
                 // Extract date and time
                 const dateTimeRegex = /(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2}:\d{2})/;
                 const match = str.match(dateTimeRegex);
                 if (!match) {
-                    return null;
+                    return false;
                 }
                 const dateStr = match[1]; // DD-MM-YYYY format
                 const timeStr = match[2]; // HH:mm:SS format
@@ -85,7 +85,7 @@ const monitorBSEAnnouncements = async () => {
                 const currentTimestamp = Date.now();
                 // Calculate time difference in hours (30 hours = 30 * 60 * 60 * 1000 milliseconds)
                 const diff = Math.abs(extractedTimestamp - currentTimestamp);
-                return diff < config.timeLimit;
+                return diff < timeLimit;
             };
 
             const getIntentType = (str) => {
@@ -116,7 +116,7 @@ const monitorBSEAnnouncements = async () => {
                     const type = mainRow.getElementsByTagName('td')[1].innerText;
                     const time = timeRow.getElementsByTagName('td')[0].innerText;
 
-                    if (time && time.startsWith('Exchange Received Time') && !isTimeBound(time)) {
+                    if (!isTimeBound(time)) {
                         return false;
                     }
 
