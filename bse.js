@@ -9,7 +9,7 @@ const config = {
         headless: 'new', // Use 'new' headless mode for better performance
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
-    timeLimit: 5000 * 60 * 1000,
+    timeLimit: 30 * 60 * 1000,
 };
 
 // Setup logging
