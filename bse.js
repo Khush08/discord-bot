@@ -9,7 +9,7 @@ const config = {
         headless: 'new', // Use 'new' headless mode for better performance
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
-    timeLimit: 30 * 60 * 1000,
+    timeLimit: 5000 * 60 * 1000,
 };
 
 // Setup logging
@@ -17,27 +17,6 @@ const log = (message) => {
     const timestamp = new Date().toISOString();
     const logMessage = `${timestamp} - ${message}`;
     console.log(logMessage);
-};
-
-const isTimeBound = (str) => {
-    // Extract date and time
-    const dateTimeRegex = /(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2}:\d{2})/;
-    const match = str.match(dateTimeRegex);
-    if (!match) {
-        return null;
-    }
-    const dateStr = match[1]; // DD-MM-YYYY format
-    const timeStr = match[2]; // HH:mm:SS format
-    // Parse the date and time from the string
-    const [day, month, year] = dateStr.split('-').map(Number);
-    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-    // Create Date object for the extracted time
-    const extractedTimestamp = new Date(year, month - 1, day, hours, minutes, seconds).getTime();
-    // Get current timestamp
-    const currentTimestamp = Date.now();
-    // Calculate time difference in hours (30 hours = 30 * 60 * 60 * 1000 milliseconds)
-    const diff = Math.abs(extractedTimestamp - currentTimestamp);
-    return diff < 200 * 60 * 1000;
 };
 
 // Main function to monitor BSE announcements
@@ -81,6 +60,48 @@ const monitorBSEAnnouncements = async () => {
 
         // Extract announcements data
         const newAnnouncements = await page.evaluate(() => {
+            const isTimeBound = (str) => {
+                // Extract date and time
+                const dateTimeRegex = /(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2}:\d{2})/;
+                const match = str.match(dateTimeRegex);
+                if (!match) {
+                    return null;
+                }
+                const dateStr = match[1]; // DD-MM-YYYY format
+                const timeStr = match[2]; // HH:mm:SS format
+                // Parse the date and time from the string
+                const [day, month, year] = dateStr.split('-').map(Number);
+                const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+                // Create Date object for the extracted time
+                const extractedTimestamp = new Date(
+                    year,
+                    month - 1,
+                    day,
+                    hours,
+                    minutes,
+                    seconds,
+                ).getTime();
+                // Get current timestamp
+                const currentTimestamp = Date.now();
+                // Calculate time difference in hours (30 hours = 30 * 60 * 60 * 1000 milliseconds)
+                const diff = Math.abs(extractedTimestamp - currentTimestamp);
+                return diff < config.timeLimit;
+            };
+
+            const getIntentType = (str) => {
+                if (str.includes('Bonus')) {
+                    return 'Bonus';
+                } else if (str.includes('Split')) {
+                    return 'Split';
+                } else if (str.includes('Award_of_Order_Receipt_of_Order')) {
+                    return 'Orders';
+                } else if (str.includes('Result')) {
+                    return 'Results';
+                } else {
+                    return 'Unknown';
+                }
+            };
+
             const tables = document.querySelectorAll('table table tbody tr table.ng-scope');
             const filteredRows = Array.from(tables)
                 .filter(
@@ -98,12 +119,17 @@ const monitorBSEAnnouncements = async () => {
                     if (time && time.startsWith('Exchange Received Time') && !isTimeBound(time)) {
                         return false;
                     }
+
+                    if (type === 'Corp. Action') {
+                        return headline.includes('Bonus') || headline.includes('Split');
+                    }
+
                     if (type === 'Company Update') {
                         return headline.includes('Award_of_Order_Receipt_of_Order');
                     }
 
                     if (type === 'Result') {
-                        return headline.includes('Results');
+                        return headline.includes('Result');
                     }
 
                     return false;
@@ -118,9 +144,7 @@ const monitorBSEAnnouncements = async () => {
 
                 return {
                     company: parts[0].trim(),
-                    intentType: parts[2].trim().includes('Award_of_Order_Receipt_of_Order')
-                        ? 'Orders'
-                        : 'Results',
+                    intentType: getIntentType(parts[2]),
                     link: `https://www.bseindia.com${link}`,
                 };
             });
@@ -128,22 +152,17 @@ const monitorBSEAnnouncements = async () => {
             return results;
         });
 
-        // Setup graceful shutdown
-        const shutdown = async () => {
-            log('Shutting down...');
+        log('Shutting down...');
 
-            if (page && !page.isClosed()) {
-                await page.close().catch((e) => log(`Error closing page: ${e.message}`));
-            }
+        if (page && !page.isClosed()) {
+            await page.close().catch((e) => log(`Error closing page: ${e.message}`));
+        }
 
-            if (browser) {
-                await browser.close().catch((e) => log(`Error closing browser: ${e.message}`));
-            }
+        if (browser) {
+            await browser.close().catch((e) => log(`Error closing browser: ${e.message}`));
+        }
 
-            log('Successfully shut down');
-        };
-
-        shutdown();
+        log('Successfully shut down');
 
         return newAnnouncements;
     } catch (error) {
