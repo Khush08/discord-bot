@@ -15,6 +15,10 @@ async function checkAPI() {
         if (channel) {
             const news = await monitorBSEAnnouncements();
 
+            if (!news || news.length === 0) {
+                await channel.send('No new announcements found.');
+            }
+
             for (let item in news) {
                 const embed = new EmbedBuilder()
                     .setColor(0x0099ff) // Hex color code
