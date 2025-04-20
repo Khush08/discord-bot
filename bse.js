@@ -82,8 +82,8 @@ const monitorBSEAnnouncements = async () => {
                     seconds,
                 ).getTime();
                 // Get current timestamp
-                const currentTimestamp = Date.now();
-                // Calculate time difference in hours (30 hours = 30 * 60 * 60 * 1000 milliseconds)
+                const currentTimestamp = new Date().getTime();
+
                 const diff = Math.abs(extractedTimestamp - currentTimestamp);
                 return diff < timeLimit;
             };
