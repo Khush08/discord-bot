@@ -16,7 +16,7 @@ async function checkAPI() {
             const news = await monitorBSEAnnouncements();
 
             if (!news || news.length === 0) {
-                await channel.send('No new announcements found.');
+                console.log('No new announcements found.');
             }
 
             for (let item in news) {
