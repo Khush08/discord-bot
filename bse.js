@@ -59,35 +59,6 @@ const monitorBSEAnnouncements = async () => {
 
         // Extract announcements data
         const newAnnouncements = await page.evaluate(() => {
-            const timeLimit = 15 * 60 * 1000;
-            const isTimeBound = (str) => {
-                // Extract date and time
-                const dateTimeRegex = /(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2}:\d{2})/;
-                const match = str.match(dateTimeRegex);
-                if (!match) {
-                    return false;
-                }
-                const dateStr = match[1]; // DD-MM-YYYY format
-                const timeStr = match[2]; // HH:mm:SS format
-                // Parse the date and time from the string
-                const [day, month, year] = dateStr.split('-').map(Number);
-                const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-                // Create Date object for the extracted time
-                const extractedTimestamp = new Date(
-                    year,
-                    month - 1,
-                    day,
-                    hours,
-                    minutes,
-                    seconds,
-                ).getTime();
-                // Get current timestamp
-                const currentTimestamp = new Date().getTime();
-
-                const diff = Math.abs(extractedTimestamp - currentTimestamp);
-                return diff < timeLimit;
-            };
-
             const getIntentType = (str) => {
                 if (str.includes('Bonus')) {
                     return 'Bonus';
@@ -111,14 +82,8 @@ const monitorBSEAnnouncements = async () => {
                 )
                 .filter((table) => {
                     const mainRow = table.getElementsByTagName('tr')[0];
-                    const timeRow = table.getElementsByTagName('tr')[2];
                     const headline = mainRow.getElementsByTagName('td')[0].innerText;
                     const type = mainRow.getElementsByTagName('td')[1].innerText;
-                    const time = timeRow.getElementsByTagName('td')[0].innerText;
-
-                    if (!isTimeBound(time)) {
-                        return false;
-                    }
 
                     if (type === 'Corp. Action') {
                         return headline.includes('Bonus') || headline.includes('Split');
