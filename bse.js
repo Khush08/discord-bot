@@ -59,7 +59,7 @@ const monitorBSEAnnouncements = async () => {
 
         // Extract announcements data
         const newAnnouncements = await page.evaluate(() => {
-            const timeLimit = 30 * 60 * 1000;
+            const timeLimit = 15 * 60 * 1000;
             const isTimeBound = (str) => {
                 // Extract date and time
                 const dateTimeRegex = /(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2}:\d{2})/;
