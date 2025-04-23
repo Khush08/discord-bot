@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const { monitorBSEAnnouncements } = require('./bse.js'); // Assuming bse.js is in the same directory
+const { monitorBSEAnnouncements } = require('./bse.js');
+const { upsertCache } = require('./cache.js');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -20,11 +21,20 @@ async function checkAPI() {
             }
 
             for (let item in news) {
+                const { link, company, cacheKey, intentType, time } = news[item];
+
+                if (upsertCache(cacheKey, true)) {
+                    console.log(`Already sent: ${cacheKey}`);
+                    continue;
+                }
+
                 const embed = new EmbedBuilder()
                     .setColor(0x0099ff) // Hex color code
-                    .setTitle(news[item].company) // Title
-                    .setURL(news[item].link)
-                    .setDescription(`${news[item].intentType} for ${news[item].company}`); // Embedded link
+                    .setTitle(company) // Title
+                    .setURL(link)
+                    .setFooter({
+                        text: `${intentType} - ${time}`,
+                    }); // Embedded link
 
                 await channel.send({ embeds: [embed] });
             }

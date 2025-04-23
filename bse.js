@@ -59,6 +59,19 @@ const monitorBSEAnnouncements = async () => {
 
         // Extract announcements data
         const newAnnouncements = await page.evaluate(() => {
+            const timeStr = (str) => {
+                // Extract date and time
+                const dateTimeRegex = /(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2}:\d{2})/;
+                const match = str.match(dateTimeRegex);
+                if (!match) {
+                    return '';
+                }
+                const dateStr = match[1]; // DD-MM-YYYY format
+                const timeStr = match[2]; // HH:mm:SS format
+
+                return `${dateStr} ${timeStr}`;
+            };
+
             const getIntentType = (str) => {
                 if (str.includes('Bonus')) {
                     return 'Bonus';
@@ -74,7 +87,7 @@ const monitorBSEAnnouncements = async () => {
             };
 
             const tables = document.querySelectorAll('table table tbody tr table.ng-scope');
-            const filteredRows = Array.from(tables)
+            const results = Array.from(tables)
                 .filter(
                     (row) =>
                         !row.classList.contains('ng-scope') ||
@@ -93,26 +106,25 @@ const monitorBSEAnnouncements = async () => {
                         return headline.includes('Award_of_Order_Receipt_of_Order');
                     }
 
-                    if (type === 'Result') {
-                        return headline.includes('Result');
-                    }
-
-                    return false;
+                    return type === 'Result' || type === 'Results';
                 })
-                .map((t) => t.getElementsByTagName('tr')[0]);
+                .map((t) => {
+                    const timeRow = t.getElementsByTagName('tr')[2];
+                    const time = timeRow.getElementsByTagName('td')[0].innerText;
+                    const resulRow = t.getElementsByTagName('tr')[0];
+                    const headline = resulRow.getElementsByTagName('td')[0].innerText.trim();
+                    const link = resulRow.getElementsByTagName('a')[0].getAttribute('href');
 
-            const results = filteredRows.map((row) => {
-                const headline = row.getElementsByTagName('td')[0].innerText.trim();
-                const link = row.getElementsByTagName('a')[0].getAttribute('href');
+                    const parts = headline.trim().split(' - ');
 
-                const parts = headline.trim().split(' - ');
-
-                return {
-                    company: parts[0].trim(),
-                    intentType: getIntentType(parts[2]),
-                    link: `https://www.bseindia.com${link}`,
-                };
-            });
+                    return {
+                        company: parts[0].trim(),
+                        intentType: getIntentType(parts[2]),
+                        link: `https://www.bseindia.com${link}`,
+                        time: timeStr(time),
+                        cacheKey: `${headline} - ${time}`,
+                    };
+                });
 
             return results;
         });
