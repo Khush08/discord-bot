@@ -1,7 +1,6 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, Events } = require('discord.js');
 const { monitorBSEAnnouncements } = require('./bse.js');
-const { upsertCache } = require('./cache.js');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
@@ -14,6 +13,18 @@ async function checkAPI() {
         // Send message to a specific channel
         const channel = client.channels.cache.get(process.env.CHANNEL_ID); // Replace with your channel ID
         if (channel) {
+            const messages = await channel.messages.fetch({ limit: 10 });
+            const messageKeys = messages
+                .map((message) => message.embeds[0])
+                .map((embed) => {
+                    const {
+                        title,
+                        footer: { text },
+                    } = embed.data;
+
+                    return `${title} - ${text}`;
+                });
+
             const news = await monitorBSEAnnouncements();
 
             if (!news || news.length === 0) {
@@ -21,10 +32,10 @@ async function checkAPI() {
             }
 
             for (let item in news) {
-                const { link, company, cacheKey, intentType, time } = news[item];
+                const { link, company, intentType, time, messageKey } = news[item];
 
-                if (upsertCache(cacheKey, true)) {
-                    console.log(`Already sent: ${cacheKey}`);
+                if (messageKeys.includes(messageKey)) {
+                    console.log(`Already sent message for ${messageKey}`);
                     continue;
                 }
 
@@ -47,7 +58,7 @@ async function checkAPI() {
 }
 
 // Bot ready event
-client.once('ready', () => {
+client.once(Events.ClientReady, () => {
     console.log(`Logged in as ${client.user.tag}!`);
     checkAPI();
 });
