@@ -79,7 +79,7 @@ const monitorBSEAnnouncements = async () => {
                     return 'Split';
                 } else if (str.includes('Award_of_Order_Receipt_of_Order')) {
                     return 'Orders';
-                } else if (str.includes('Result')) {
+                } else if (str.includes('Result') || str.includes('Financial')) {
                     return 'Results';
                 } else {
                     return 'Unknown';
@@ -104,6 +104,10 @@ const monitorBSEAnnouncements = async () => {
 
                     if (type === 'Company Update') {
                         return headline.includes('Award_of_Order_Receipt_of_Order');
+                    }
+
+                    if (type === 'Integrated Filing') {
+                        return headline.includes('Financial');
                     }
 
                     return type === 'Result' || type === 'Results';
