@@ -11,13 +11,6 @@ const config = {
     },
 };
 
-// Setup logging
-const log = (message) => {
-    const timestamp = new Date().toISOString();
-    const logMessage = `${timestamp} - ${message}`;
-    console.log(logMessage);
-};
-
 // Main function to monitor BSE announcements
 const monitorBSEAnnouncements = async () => {
     let browser;
@@ -32,7 +25,7 @@ const monitorBSEAnnouncements = async () => {
     }
 
     try {
-        log('Starting BSE announcements monitoring');
+        console.log(`refetching announcements...`);
 
         // Navigate to the BSE announcements page
         for (let attempt = 1; attempt <= config.maxRetries; attempt++) {
@@ -40,20 +33,16 @@ const monitorBSEAnnouncements = async () => {
                 await page.goto(config.url, { waitUntil: 'networkidle2', timeout: 60000 });
                 break;
             } catch (error) {
-                log(`Navigation error (attempt ${attempt}/${config.maxRetries}): ${error.message}`);
                 if (attempt === config.maxRetries) throw error;
                 await new Promise((r) => setTimeout(r, config.retryDelaySeconds * 1000));
             }
         }
-
-        log('Successfully loaded BSE announcements page');
         // Check if there are any results
         const noRecordsText = await page.evaluate(() => {
             return document.body.innerText.includes('No Records Found');
         });
 
         if (noRecordsText) {
-            log('No new records found in this check');
             return [];
         }
 
@@ -136,31 +125,26 @@ const monitorBSEAnnouncements = async () => {
             return results;
         });
 
-        log('Shutting down...');
-
         if (page && !page.isClosed()) {
-            await page.close().catch((e) => log(`Error closing page: ${e.message}`));
+            await page.close().catch((e) => console.log(`Error closing page: ${e.message}`));
         }
 
         if (browser) {
-            await browser.close().catch((e) => log(`Error closing browser: ${e.message}`));
+            await browser.close().catch((e) => console.log(`Error closing browser: ${e.message}`));
         }
-
-        log('Successfully shut down');
 
         return newAnnouncements;
     } catch (error) {
-        log(`Error during check: ${error.message}`);
-
         // If page crashed, create a new one
         if (error.message.includes('Target closed') || error.message.includes('Protocol error')) {
-            log('Browser target closed unexpectedly, will create new page on next check');
             if (page && !page.isClosed()) {
-                await page.close().catch((e) => log(`Error closing page: ${e.message}`));
+                await page.close().catch((e) => console.log(`Error closing page: ${e.message}`));
             }
 
             if (browser) {
-                await browser.close().catch((e) => log(`Error closing browser: ${e.message}`));
+                await browser
+                    .close()
+                    .catch((e) => console.log(`Error closing browser: ${e.message}`));
             }
 
             page = null;

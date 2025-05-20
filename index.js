@@ -8,10 +8,9 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 // Monitor API and check for changes
-async function checkAPI() {
+async function checkAPI(channel) {
     try {
         // Send message to a specific channel
-        const channel = client.channels.cache.get(process.env.CHANNEL_ID); // Replace with your channel ID
         if (channel) {
             const messages = await channel.messages.fetch({ limit: 10 });
             const messageKeys = messages
@@ -35,7 +34,6 @@ async function checkAPI() {
                 const { link, company, intentType, time, messageKey } = news[item];
 
                 if (messageKeys.includes(messageKey)) {
-                    console.log(`Already sent message for ${messageKey}`);
                     continue;
                 }
 
@@ -51,16 +49,18 @@ async function checkAPI() {
             }
         }
     } catch (error) {
-        console.error('Error fetching API data:', error);
+        await client.send(`Error fetching API data ${error.message}`);
     } finally {
-        client.destroy();
+        setTimeout(() => {
+            checkAPI(channel);
+        }, 1000 * 60); // Check every 1 minute
     }
 }
 
 // Bot ready event
 client.once(Events.ClientReady, () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-    checkAPI();
+    const channel = client.channels.cache.get(process.env.CHANNEL_ID);
+    checkAPI(channel);
 });
 
 // Log in to Discord
