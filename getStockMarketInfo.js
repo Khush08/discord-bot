@@ -12,9 +12,13 @@ const config = {
 export const getStockMarketInfo = async () => {
     const browser = await puppeteer.launch(config.browser);
     const page = await browser.newPage();
+
     // Set viewport to ensure all elements are visible
     await page.setViewport({ width: 1920, height: 1064 });
+
+    // Navigate to the BSE announcements page
     await page.goto(config.url, { waitUntil: 'networkidle2', timeout: 60000 });
+
     const results = await page.evaluate(async () => {
         const bulkResults = [];
         const gotoDocumentState = async (document, categoryValue, subCategoryValue) => {
@@ -40,6 +44,7 @@ export const getStockMarketInfo = async () => {
             const submitButton = submitElement;
             submitButton.click();
         };
+
         const exchangeReceivedInfoToTime = (str) => {
             // Extract date and time
             const dateTimeRegex = /(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2}:\d{2})/;
@@ -52,6 +57,7 @@ export const getStockMarketInfo = async () => {
 
             return `${dateStr} ${timeStr}`;
         };
+
         const getTableData = async (document, state) => {
             const tables = document.querySelectorAll('table table tbody tr table.ng-scope');
             const results = Array.from(tables)
@@ -85,7 +91,8 @@ export const getStockMarketInfo = async () => {
          * Check for results in the 'Award of Order / Receipt of Order' section
          */
         await gotoDocumentState(document, 'Company Update', 'Award of Order / Receipt of Order');
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
 
         while (true) {
             const results = await getTableData(document, 'Orders');
@@ -99,14 +106,15 @@ export const getStockMarketInfo = async () => {
             }
             const nextButton = nextLink;
             nextButton.click();
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
         }
 
         /**
          * Check for outcomes in the 'Board Meeting' section
          */
         await gotoDocumentState(document, 'Board Meeting', 'Outcome of Board Meeting');
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
 
         while (true) {
             const results = await getTableData(document, 'Meetings');
@@ -120,35 +128,37 @@ export const getStockMarketInfo = async () => {
             }
             const nextButton = nextLink;
             nextButton.click();
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
         }
 
         /**
          * Check for entries in the 'Annual General Meeting' section
          */
-        // await gotoDocumentState(document, 'AGM/EGM', 'AGM');
-        // await new Promise((resolve) => setTimeout(resolve, 2000));
+        await gotoDocumentState(document, 'AGM/EGM', 'AGM');
 
-        // while (true) {
-        //     const results = await getTableData(document, 'AGM');
-        //     if (results.length === 0) {
-        //         break;
-        //     }
-        //     bulkResults.push(...results);
-        //     const nextLink = document.querySelector('a[id="idnext"]');
-        //     if (!nextLink) {
-        //         break;
-        //     }
-        //     const nextButton = nextLink;
-        //     nextButton.click();
-        //     await new Promise((resolve) => setTimeout(resolve, 2000));
-        // }
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
+
+        while (true) {
+            const results = await getTableData(document, 'AGM');
+            if (results.length === 0) {
+                break;
+            }
+            bulkResults.push(...results);
+            const nextLink = document.querySelector('a[id="idnext"]');
+            if (!nextLink) {
+                break;
+            }
+            const nextButton = nextLink;
+            nextButton.click();
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
+        }
 
         /**
          * Check for entries in the 'Extra General Meeting' section
          */
         await gotoDocumentState(document, 'AGM/EGM', 'EGM');
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
 
         while (true) {
             const results = await getTableData(document, 'EGM');
@@ -162,50 +172,52 @@ export const getStockMarketInfo = async () => {
             }
             const nextButton = nextLink;
             nextButton.click();
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
         }
 
         /**
-         * Check for results in the 'Company Update' section
+         * Check for results section
          */
-        // await gotoDocumentState(document, 'Result', 'Financial Results');
-        // await new Promise((resolve) => setTimeout(resolve, 2000));
+        await gotoDocumentState(document, 'Result', 'Financial Results');
 
-        // while (true) {
-        //     const results = await getTableData(document, 'Results');
-        //     if (results.length === 0) {
-        //         break;
-        //     }
-        //     bulkResults.push(...results);
-        //     const nextLink = document.querySelector('a[id="idnext"]');
-        //     if (!nextLink) {
-        //         break;
-        //     }
-        //     const nextButton = nextLink;
-        //     nextButton.click();
-        //     await new Promise((resolve) => setTimeout(resolve, 2000));
-        // }
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
+
+        while (true) {
+            const results = await getTableData(document, 'Results');
+            if (results.length === 0) {
+                break;
+            }
+            bulkResults.push(...results);
+            const nextLink = document.querySelector('a[id="idnext"]');
+            if (!nextLink) {
+                break;
+            }
+            const nextButton = nextLink;
+            nextButton.click();
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
+        }
 
         /**
          * Check for results in the 'Integrated Filing' section
          */
-        // await gotoDocumentState(document, 'Integrated Filing', 'Integrated Filing (Financial)');
-        // await new Promise((resolve) => setTimeout(resolve, 2000));
+        await gotoDocumentState(document, 'Integrated Filing', 'Integrated Filing (Financial)');
 
-        // while (true) {
-        //     const results = await getTableData(document, 'Results');
-        //     if (results.length === 0) {
-        //         break;
-        //     }
-        //     bulkResults.push(...results);
-        //     const nextLink = document.querySelector('a[id="idnext"]');
-        //     if (!nextLink) {
-        //         break;
-        //     }
-        //     const nextButton = nextLink;
-        //     nextButton.click();
-        //     await new Promise((resolve) => setTimeout(resolve, 2000));
-        // }
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
+
+        while (true) {
+            const results = await getTableData(document, 'Results');
+            if (results.length === 0) {
+                break;
+            }
+            bulkResults.push(...results);
+            const nextLink = document.querySelector('a[id="idnext"]');
+            if (!nextLink) {
+                break;
+            }
+            const nextButton = nextLink;
+            nextButton.click();
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // wait
+        }
 
         return bulkResults;
     });

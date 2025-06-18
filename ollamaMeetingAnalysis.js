@@ -7,7 +7,9 @@ const formatMeetingPrompt = (data) =>
     ${data}
     ---
 
-    Please identify and list the key points discussed in this meeting, that can affect the stock prices. Respond using JSON`;
+    Please identify and list the key points discussed in this meeting, that can affect the stock prices.
+    Do not include information about change of management, or change of personnel.
+    Respond using JSON`;
 
 const getMeetingAnalysisText = ({ keyPoints }) => {
     if (!keyPoints || keyPoints.length === 0) {
@@ -19,9 +21,14 @@ const getMeetingAnalysisText = ({ keyPoints }) => {
 export const ollamaMeetingAnalysis = async (data) => {
     try {
         const response = await ollama.chat({
-            model: 'llama3.2',
+            model: 'gemma3:4b',
+            think: false,
             messages: [
-                { role: 'system', content: 'You are an expert financial analyst.' },
+                {
+                    role: 'system',
+                    content:
+                        'You are an expert financial analyst who can analyze the key details in board meetings, AGM calls, and EGM calls held by a company.',
+                },
                 { role: 'user', content: formatMeetingPrompt(data) },
             ],
             format: {
@@ -40,6 +47,9 @@ export const ollamaMeetingAnalysis = async (data) => {
                 required: ['keyPoints'],
             },
             stream: false,
+            options: {
+                temperature: 0,
+            },
         });
 
         if (response && response.message && response.message.content) {

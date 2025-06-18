@@ -15,9 +15,14 @@ const getOrderAnalysisText = ({ orderValue, orderCompletionDate, awarder }) =>
 export const ollamaOrderAnalysis = async (data) => {
     try {
         const response = await ollama.chat({
-            model: 'llama3.2',
+            model: 'gemma3:4b',
+            think: false,
             messages: [
-                { role: 'system', content: 'You are an expert financial analyst.' },
+                {
+                    role: 'system',
+                    content:
+                        'You are an expert financial analyst who can analyze the orders or contracts received by a company.',
+                },
                 { role: 'user', content: formatOrderPrompt(data) },
             ],
             format: {
@@ -39,16 +44,27 @@ export const ollamaOrderAnalysis = async (data) => {
                 required: ['orderValue', 'orderCompletionDate', 'awarder'],
             },
             stream: false,
+            options: {
+                temperature: 0,
+            },
         });
 
         if (response && response.message && response.message.content) {
             const parsedResponse = JSON.parse(response.message.content);
             return getOrderAnalysisText(parsedResponse);
         } else {
-            return getOrderAnalysisText({ orderValue: '', orderCompletionDate: '', awarder: '' });
+            return getOrderAnalysisText({
+                orderValue: '',
+                orderCompletionDate: '',
+                awarder: '',
+            });
         }
     } catch (error) {
         console.error('Error in ollamaMeetingAnalysis:', error);
-        return getOrderAnalysisText({ orderValue: '', orderCompletionDate: '', awarder: '' });
+        return getOrderAnalysisText({
+            orderValue: '',
+            orderCompletionDate: '',
+            awarder: '',
+        });
     }
 };

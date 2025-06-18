@@ -46,9 +46,14 @@ const getResultAnalysisText = ({
 export const ollamaResultAnalysis = async (data) => {
     try {
         const response = await ollama.chat({
-            model: 'llama3.2',
+            model: 'gemma3:4b',
+            think: false,
             messages: [
-                { role: 'system', content: 'You are an expert financial analyst.' },
+                {
+                    role: 'system',
+                    content:
+                        'You are an expert financial analyst who can analyze the key details in financial results of a company.',
+                },
                 { role: 'user', content: formatResultPrompt(data) },
             ],
             format: {
@@ -155,16 +160,27 @@ export const ollamaResultAnalysis = async (data) => {
                 ],
             },
             stream: false,
+            options: {
+                temperature: 0,
+            },
         });
 
         if (response && response.message && response.message.content) {
             const parsedResponse = JSON.parse(response.message.content);
             return getResultAnalysisText(parsedResponse);
         } else {
-            return getResultAnalysisText({ qoqComparison: '', yoyComparison: '', keyPoints: [] });
+            return getResultAnalysisText({
+                qoqComparison: '',
+                yoyComparison: '',
+                keyPoints: [],
+            });
         }
     } catch (error) {
         console.error('Error in ollamaMeetingAnalysis:', error);
-        return getResultAnalysisText({ qoqComparison: '', yoyComparison: '', keyPoints: [] });
+        return getResultAnalysisText({
+            qoqComparison: '',
+            yoyComparison: '',
+            keyPoints: [],
+        });
     }
 };

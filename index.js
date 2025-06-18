@@ -37,21 +37,13 @@ const getAnalysis = async (intentType, data) => {
     }
 };
 
-const getData = async ({ link, company, intentType, time, messageKey }) => {
-    const pdfData = await parsePDFText(link);
-    const analysis = await getAnalysis(intentType, pdfData);
-
-    cache.push(messageKey);
-
-    return getEmbed(company, link, intentType, time, analysis);
-};
-
 // Monitor API and check for changes
 async function checkAPI() {
     try {
         console.log(`Checking for new announcements...`);
         // Send message to a specific channel
-        const channel = client.channels.cache.get(process.env.CHANNEL_ID); // Replace with your channel ID
+        const channel = client.channels.cache.get(process.env.CHANNEL_ID);
+
         if (channel) {
             const newsItems = await getStockMarketInfo();
 
@@ -72,17 +64,23 @@ async function checkAPI() {
     } catch (error) {
         console.error('Error fetching API data:', error);
     } finally {
-        setTimeout(checkAPI, 60000); // Check every minute
+        // stop the client
+        client.destroy();
+
+        // keep monitoring for new announcements
+        // setTimeout(checkAPI, 60000);
     }
 }
 
 // Bot ready event
 client.once(Events.ClientReady, () => {
     console.log(`Logged in as ${client.user.tag}!`);
+
     if (fs.existsSync('cache.json')) {
         const cachedData = JSON.parse(fs.readFileSync('cache.json', 'utf8'));
         cache.push(...cachedData.items);
     }
+
     checkAPI();
 });
 
